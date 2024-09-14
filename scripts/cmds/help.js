@@ -1,122 +1,83 @@
-const commandInfoMap = {
-  ai: {
-    name: "ai",
-    description: "AI Based on GPT-4",
-    guide: "%1ai what is life?"
-  },
-  alldl: {
-    name: "alldl",
-    description: "Download video content using link from Facebook, Instagram, Tiktok, Youtube, Twitter, and Spotify audio",
-    guide: "%1alldl [link]"
-  },
-  dalle: {
-    name: "dalle",
-    description: "Create images through text",
-    guide: "%1dalle cat in a hoodie"
-  },
-  help: {
-    name: "help",
-    description: "View all commands",
-    guide: "%1help\n%1help <command name>"
-  },
-  lyrics: {
-    name: "lyrics",
-    description: "Fetches lyrics of a song",
-    guide: "%1lyrics perfect by ed sheeran"
-  },
-  pinterest: {
-    name: "pinterest",
-    description: "Searches images on Pinterest",
-    guide: "%1pinterest cat -10"
-  },
-  prefix: {
-    name: "prefix",
-    description: "View some commands and show bot's prefix",
-    guide: "%1prefix"
-  },
-  remini: {
-    name: "remini",
-    description: "Enhances your image to lessen the blur",
-    guide: "Reply to an image and type %1remini"
-  },
-  removebg: {
-    name: "removebg",
-    description: "Remove background of an image",
-    guide: "Reply to an image and type %1removebg or %1rbg"
-  },
-  spotify: {
-    name: "spotify",
-    description: "Play song from Spotify",
-    guide: "%1spotify <song title> <artist>\nExample:\n%1spotify perfect by ed sheeran"
-  },
-  tempmail: {
-    name: "tempmail",
-    description: "Get temporary emails and their inbox messages",
-    guide: "%1tempmail create\n%1tempmail inbox <email>"
-  },
-  translate: {
-    name: "translate",
-    description: "Translate to any language",
-    guide: "Reply to the text you want to translate and type\n%1translate <language>"
-  },
-  unsend: {
-    name: "unsend",
-    description: "Deletes bot messages",
-    guide: "Reply to a bot message and type %1unsend"
-  },
-  uptime: {
-    name: "uptime",
-    description: "See how long the bot has been running",
-    guide: "%1uptime"
-  }
-};
+const fs = require('fs');
+const path = require('path');
+const config = require('../../config.dev.json'); // Adjust the path as needed
 
 module.exports = {
   config: {
     name: "help",
-    aliases: ["help"],
-    version: 1.0,
-    author: "LiANE&Coffee",
-    shortDescription: { en: "View all commands" },
-    category: "members",
+    version: "1.0",
+    author: "Cruizex",
+    countDown: 0,
+    role: 0,
+    category: "Utility",
+    shortDescription: "Display help information for available commands",
+    guide: {
+      en: "{pn} help - Display help information for available commands",
+    },
   },
-  onStart: async function({ message, args }) {
-    const prefix = global.GoatBot.config.prefix; // Access the global prefix
 
-    if (args[0]) {
-      const command = args[0].toLowerCase();
-      if (commandInfoMap[command]) {
-        const { name, description, guide } = commandInfoMap[command];
-        const response = `━━━━━━━━━━━━━━━━\n𝙲𝚘𝚖𝚖𝚊𝚗𝚍 𝙽𝚊𝚖𝚎: ${name}\n𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚝𝚒𝚘𝚗: ${description}\n𝙶𝚞𝚒𝚍𝚎: ${guide.replace(/%1/g, prefix)}\n━━━━━━━━━━━━━━━━`;
-        return message.reply(response);
+  onStart: async function ({ api, args, message }) {
+    const cmdFolderPath = path.join(__dirname);
+    const files = fs.readdirSync(cmdFolderPath);
+
+    // Display command guide or short description if a specific command is provided
+    if (args[0] && isNaN(args[0])) {
+      const commandName = args[0].toLowerCase() + '.js';
+      const commandFile = files.find(file => file.toLowerCase() === commandName);
+
+      if (commandFile) {
+        const commandModule = require(path.join(cmdFolderPath, commandFile));
+
+        // Check if the guide is available in English
+        const englishGuide = commandModule.config.guide && commandModule.config.guide.en;
+
+        if (englishGuide) {
+          if (typeof englishGuide === 'string') {
+            return message.reply(`Guide for ${commandFile}:\n${englishGuide.replace(/\{pn\}/g, config.prefix)}`);
+          } else if (typeof englishGuide === 'object' && englishGuide.body) {
+            return message.reply(`Guide for ${commandFile}:\n${englishGuide.body.replace(/\{pn\}/g, config.prefix)}`);
+          }
+        }
+
+        return message.reply(`Guide for ${commandFile}:\nInformation not available.`);
       } else {
-        return message.reply("Command not found.");
+        return message.reply(`Command "${args[0]}" not found.`);
       }
-    } else {
-      const commandsList = `━━━━━━━━━━━━━━━━
-𝙰𝚟𝚊𝚒𝚕𝚊𝚋𝚕𝚎 𝙲𝚘𝚖𝚖𝚊𝚗𝚍𝚜:
-╭─╼━━━━━━━━╾─╮
-│ %1 Ai
-│ %1 Alldl
-│ %1 Dalle
-│ %1 Help
-│ %1 Lyrics
-│ %1 Pinterest
-│ %1 Prefix
-│ %1 Remini
-│ %1 Removebg
-│ %1 Tempmail
-│ %1 Translate
-│ %1 Unsend
-│ %1 Uptime
-╰─━━━━━━━━━╾─╯
-%1help <command name>
-𝚃𝚘 𝚜𝚎𝚎 𝚑𝚘𝚠 𝚝𝚘 𝚞𝚜𝚎 𝚊𝚟𝚊𝚒𝚕𝚊𝚋𝚕𝚎 𝚌𝚘𝚖𝚖𝚊𝚗𝚍𝚜.
-
-Example: %1help ai
-━━━━━━━━━━━━━━━━`;
-
-      return message.reply(commandsList.replace(/%1/g, prefix));
     }
+
+    // Handle page navigation
+    const pageSize = 25; // Maximum number of commands per page
+    const pageIndex = args[0] ? parseInt(args[0], 10) : 1;
+
+    if (isNaN(pageIndex) || pageIndex < 1) {
+      return message.reply('Invalid page number.');
+    }
+
+    const startIdx = (pageIndex - 1) * pageSize;
+    const endIdx = startIdx + pageSize;
+    const pageFiles = files
+      .filter(file => file.endsWith('.js') && file !== 'help.js') // Exclude help.js from the list
+      .slice(startIdx, endIdx);
+
+    if (pageFiles.length === 0) {
+      return message.reply('No commands to display on this page.');
+    }
+
+    const formattedCommands = pageFiles
+      .map(file => `\u2022 ${path.parse(file).name}`)
+      .join('\n');
+
+    const totalPages = Math.ceil((files.length - 1) / pageSize); // Subtract 1 for help.js
+    const currentPage = Math.min(Math.ceil(endIdx / pageSize), totalPages);
+
+    let helpMessage = `𝖢𝖮𝖬𝖬𝖠𝖭𝖣𝖲 𝖫𝖨𝖲𝖳
+(𝖯𝖠𝖦𝖤 ${currentPage}/${totalPages}):\n${formattedCommands}`;
+
+    // Add instructions for navigating to the next page without {pn}
+    if (endIdx < files.length) {
+      helpMessage += `\n\n𝖳𝖮 𝖵𝖨𝖤𝖶 𝖳𝖧𝖤 𝖭𝖤𝖷𝖳 𝖯𝖠𝖦𝖤, 𝖴𝖲𝖤: 𝖧𝖤𝖫𝖯 ${currentPage + 1}`;
+    }
+
+    message.reply(helpMessage);
   }
 };
